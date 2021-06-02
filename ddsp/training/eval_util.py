@@ -36,7 +36,8 @@ def evaluate_or_sample(data_provider,
                        num_batches=50,
                        ckpt_delay_secs=0,
                        run_once=False,
-                       run_until_step=0):
+                       run_until_step=0,
+                       save_csv=False):
   """Run evaluation loop.
 
   Args:
@@ -52,6 +53,8 @@ def evaluate_or_sample(data_provider,
     run_once: Only run evaluation or sampling once.
     run_until_step: Run until we see a checkpoint with a step greater or equal
       to the specified value. Ignored if <= 0.
+    save_csv: Whether to save a CSV file of the raw results. Used with
+      restore_dir for running a final eval run after training.
 
   Returns:
     If the mode is 'eval', then returns a dictionary of Tensors keyed by loss
@@ -72,6 +75,9 @@ def evaluate_or_sample(data_provider,
   dataset = data_provider.get_batch(batch_size=batch_size,
                                     shuffle=False,
                                     repeats=-1)
+  # Set number of batches
+  # If num_batches >=1 set it to a huge value
+  num_batches = num_batches if num_batches >= 1 else int(1e12)
 
   # Get audio sample rate
   sample_rate = data_provider.sample_rate
@@ -135,6 +141,18 @@ def evaluate_or_sample(data_provider,
 
       if mode == 'eval':
         for evaluator in evaluators:
+
+          if save_csv:
+            try:
+              df = evaluator.as_dataframe()
+              csv_dir = os.path.join(restore_dir, 'results')
+              tf.io.gfile.makedirs(csv_dir)
+              csv_path = os.path.join(csv_dir, evaluator.csv_filename)
+              with tf.io.gfile.GFile(csv_path, 'w') as f:
+                df.to_csv(f)
+            except NotImplementedError:
+              continue
+
           evaluator.flush(step)
 
       summary_writer.flush()
@@ -160,7 +178,8 @@ def evaluate(data_provider,
              num_batches=50,
              ckpt_delay_secs=0,
              run_once=False,
-             run_until_step=0):
+             run_until_step=0,
+             save_csv=False):
   """Run evaluation loop.
 
   Args:
@@ -175,6 +194,8 @@ def evaluate(data_provider,
     run_once: Only run evaluation or sampling once.
     run_until_step: Run until we see a checkpoint with a step greater or equal
       to the specified value. Ignored if <= 0.
+    save_csv: Whether to save a CSV file of the raw results. Used with
+      restore_dir for running a final eval run after training.
 
   Returns:
     A dictionary of tensors containing the loss values, keyed by loss type.
@@ -191,7 +212,8 @@ def evaluate(data_provider,
       num_batches=num_batches,
       ckpt_delay_secs=ckpt_delay_secs,
       run_once=run_once,
-      run_until_step=run_until_step)
+      run_until_step=run_until_step,
+      save_csv=save_csv)
 
 
 @gin.configurable

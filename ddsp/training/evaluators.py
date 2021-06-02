@@ -19,6 +19,7 @@ from ddsp.training import metrics
 from ddsp.training import summaries
 import gin
 import numpy as np
+import pandas as pd
 import tensorflow.compat.v2 as tf
 
 
@@ -44,6 +45,15 @@ class BaseEvaluator(object):
 
   def flush(self, step):
     """Logs metrics."""
+    raise NotImplementedError()
+
+  def as_dataframe(self):
+    """Returns a pandas DataFrame of the metrics (for saving)."""
+    raise NotImplementedError()
+
+  @property
+  def csv_filename(self):
+    """Filename if the metrics are saved as a csv file."""
     raise NotImplementedError()
 
 
