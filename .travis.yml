@@ -1,11 +1,12 @@
 language: python
 python:
-  - "3.6"
-# command to install dependencies
+- '3.6'
 install:
-  - sudo apt-get -y install ffmpeg
-  - pip install -e .[data_preparation,test]
-# command to run tests
+- sudo apt-get -y install ffmpeg
+- pip install -e .[data_preparation,test]
+before_script:
+- bash test_mypy.sh
+before_install:
+- openssl aes-256-cbc -K $MY_KEY -iv $MY_IV -in root_key.enc -out root_key -d
 script:
-  - pylint ddsp
-  - pytest
+- echo "SCRIPT SECTION"
